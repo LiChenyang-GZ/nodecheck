@@ -1,0 +1,27 @@
+{
+  "model": "Azure Standard_B2ats_v2",
+  "cpu": {
+    "logical_cpus": 2
+  },
+  "memory": {
+    "gib": 1,
+    "min_ratio": 0.8
+  },
+  "disk": {
+    "min_size_gib": 64,
+    "type": "ssd",
+    "check_type": false
+  },
+  "nics": {
+    "min_up": 1
+  },
+  "os": {
+    "prefix": "Ubuntu 24.04"
+  },
+  "notes": {
+    "cpu.logical_cpus": "Azure vCPU = logical CPU (on this size: 1 core x 2 hyperthreads).",
+    "memory.min_ratio": "MemTotal is RAM minus firmware/kernel reservations. Measured 0.82 GiB of 1 GiB; small VMs lose a bigger share. Use ~0.95 for large servers.",
+    "disk.check_type": "Azure virtual disks report rotational=1 even on Premium SSD, so disk type can't be verified here. Set true on bare metal.",
+    "nics": "Only presence and link state. The driver claims 50 Gbit/s but 4.84 was measured; speed is checked by benchmarks."
+  }
+}
