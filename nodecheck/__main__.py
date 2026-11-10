@@ -11,7 +11,7 @@ import json
 import sys
 
 from nodecheck.inventory import collect
-from nodecheck.spec import check, format_report, load_spec
+from nodecheck.spec import check, format_report, has_failures, load_spec
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -32,7 +32,8 @@ def main(argv: list[str] | None = None) -> int:
         spec = load_spec(args.spec)
         results = check(collect(args.root), spec)
         print(format_report(results, spec))
-        # Not implemented yet: the exit code doesn't reflect FAILs.
+        # 1 when anything FAILs, so a script looping over many nodes can pick out the bad ones
+        return 1 if has_failures(results) else 0
     return 0
 
 
