@@ -6,3 +6,6 @@ requires-python = ">=3.10"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# tmp_path folders go in ./.pytest-tmp (emptied each run) instead of the system temp dir,
+# which can be unreadable on Windows ("WinError 5") if an earlier run created it with other permissions
+addopts = "--basetemp=.pytest-tmp"

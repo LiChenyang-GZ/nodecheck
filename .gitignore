@@ -1,6 +1,8 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+# pytest scratch dirs (tmp_path), see pyproject addopts
+.pytest-tmp/
 .venv/
 # run output and log bundles
 results/
