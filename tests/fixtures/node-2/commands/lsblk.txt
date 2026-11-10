@@ -1,0 +1,2 @@
+NAME        SIZE ROTA TYPE MODEL
+sda  68719476736    1 disk Virtual Disk
