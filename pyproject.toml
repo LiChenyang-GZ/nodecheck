@@ -1,0 +1,8 @@
+[project]
+name = "nodecheck"
+version = "0.1.0"
+description = "Validate Linux nodes before handover: health checks, benchmarks, baseline comparison, fault drills."
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
