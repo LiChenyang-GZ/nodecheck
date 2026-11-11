@@ -18,10 +18,21 @@
   "os": {
     "prefix": "Ubuntu 24.04"
   },
+  "kernel_log": {
+    "max_priority": 3,
+    "ignore": [
+      {
+        "pattern": "^/dev/sr0: Can't lookup blockdev$",
+        "reason": "Logged at err during boot on both VMs: something at boot looks for the virtual CD-ROM, but the VM has no sr0 device (not in /sys/block). Not a hardware fault."
+      }
+    ]
+  },
   "notes": {
     "cpu.logical_cpus": "Azure vCPU = logical CPU (on this size: 1 core x 2 hyperthreads).",
     "memory.min_ratio": "MemTotal is RAM minus firmware/kernel reservations. Measured 0.82 GiB of 1 GiB; small VMs lose a bigger share. Use ~0.95 for large servers.",
     "disk.check_type": "Azure virtual disks report rotational=1 even on Premium SSD, so disk type can't be verified here. Set true on bare metal.",
-    "nics": "Only presence and link state. The driver claims 50 Gbit/s but 4.84 was measured; speed is checked by benchmarks."
+    "nics": "Only presence and link state. The driver claims 50 Gbit/s but 4.84 was measured; speed is checked by benchmarks.",
+    "kernel_log.max_priority": "Count messages at priority 0-3 (emerg, alert, crit, err). Warnings (4) are only counted: a healthy VM logs 9 at boot (no PCI bus, no CPU microcode, ...).",
+    "kernel_log.ignore": "Known harmless messages (regex, matched with re.search). Each needs a reason, so every exception is on record."
   }
 }
