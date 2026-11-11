@@ -12,6 +12,10 @@ DIR/commands/ (journalctl-k.jsonl, df.txt, df-i.txt) instead.
     python3 -m nodecheck compare --spec config/b2ats_v2.json --peer 172.16.0.5 --baseline baselines/node-1.json [--only network]
 
 `compare` runs the benchmarks again and flags metrics that got worse than the baseline.
+
+    python3 -m nodecheck bundle --spec config/b2ats_v2.json [--baseline baselines/node-1.json] [--out FILE]
+
+`bundle` collects the check report and the logs and state an investigation needs into one .tar.gz.
 """
 from __future__ import annotations
 
@@ -22,7 +26,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from nodecheck import bench, compare, disk_usage, kernel_log
+from nodecheck import bench, bundle, compare, disk_usage, kernel_log
 from nodecheck.inventory import collect
 from nodecheck.spec import check, format_report, has_failures, load_spec
 
@@ -49,6 +53,12 @@ def main(argv: list[str] | None = None) -> int:
     compare_cmd.add_argument("--peer", required=True, help="private IP of the other node (runs `iperf3 -s`)")
     compare_cmd.add_argument("--baseline", required=True, help="this node's baseline, e.g. baselines/node-1.json")
     compare_cmd.add_argument("--only", choices=["network"], help="re-run only iperf3 and ping (about 45 s)")
+
+    bundle_cmd = commands.add_parser("bundle", help="collect logs and state for an investigation into a .tar.gz")
+    bundle_cmd.add_argument("--spec", required=True, help="spec file, e.g. config/b2ats_v2.json")
+    bundle_cmd.add_argument("--baseline", help="this node's baseline, copied into the bundle")
+    bundle_cmd.add_argument("--out", help="the .tar.gz to write (default: nodecheck-<host>-<UTC time>.tar.gz)")
+    bundle_cmd.add_argument("--root", default="/", help="filesystem root to read from (default: /)")
 
     args = parser.parse_args(argv)
     if args.command == "inventory":
@@ -85,6 +95,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Baseline: {baseline['node']}, measured {baseline['measured_at']}; now: median of {runs} runs")
         print(format_report(results, spec))
         return 1 if has_failures(results) else 0
+    elif args.command == "bundle":
+        pass  # Not implemented yet.
     return 0
 
 
