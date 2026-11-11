@@ -27,12 +27,21 @@
       }
     ]
   },
+  "benchmark": {
+    "runs": 3,
+    "notes": {
+      "cpu": "B2ats_v2 is burstable: base CPU is 20% (60 initial credits, 24 banked per hour, max 576). These numbers are measured while bursting; with no credits left the CPU drops to about a fifth, which looks like a fault but is the platform throttling.",
+      "disk": "The OS disk has host caching ReadWrite (checked with the instance metadata service). The 256 MB fio file is served from the host's cache, so IOPS (~9,400) is far above the P6 disk's own limit (3,500 when bursting). Good for spotting drift, not a measure of the disk itself.",
+      "network": "Azure caps this size at 6,250 Mbps in total; one TCP stream measured 4.8-5.0 Gbit/s between the two nodes."
+    }
+  },
   "notes": {
     "cpu.logical_cpus": "Azure vCPU = logical CPU (on this size: 1 core x 2 hyperthreads).",
     "memory.min_ratio": "MemTotal is RAM minus firmware/kernel reservations. Measured 0.82 GiB of 1 GiB; small VMs lose a bigger share. Use ~0.95 for large servers.",
     "disk.check_type": "Azure virtual disks report rotational=1 even on Premium SSD, so disk type can't be verified here. Set true on bare metal.",
     "nics": "Only presence and link state. The driver claims 50 Gbit/s but 4.84 was measured; speed is checked by benchmarks.",
     "kernel_log.max_priority": "Count messages at priority 0-3 (emerg, alert, crit, err). Warnings (4) are only counted: a healthy VM logs 9 at boot (no PCI bus, no CPU microcode, ...).",
-    "kernel_log.ignore": "Known harmless messages (regex, matched with re.search). Each needs a reason, so every exception is on record."
+    "kernel_log.ignore": "Known harmless messages (regex, matched with re.search). Each needs a reason, so every exception is on record.",
+    "benchmark.runs": "Each benchmark runs 3 times and the median is kept, so one slow run (a noisy neighbour) doesn't move the baseline."
   }
 }
