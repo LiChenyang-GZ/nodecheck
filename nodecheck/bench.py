@@ -122,10 +122,11 @@ def run_benchmarks(peer: str, runs: int, runner=None, metrics: list[str] | None 
     of each tool rather than every run of one tool.
     """
     runner = runner or run
-    values = {metric: [] for metric in COMMANDS}
+    metrics = metrics or list(COMMANDS)
+    values = {metric: [] for metric in metrics}
     for i in range(runs):
         print(f"run {i + 1}/{runs} ...", file=sys.stderr)
-        for metric in COMMANDS:
+        for metric in metrics:
             out = runner(command_for(metric, peer))
             values[metric].append(None if out is None else _PARSERS[metric](out))
     return values

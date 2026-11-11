@@ -8,7 +8,7 @@ For each metric the spec (benchmark.compare) says which way is better and how mu
 """
 from __future__ import annotations
 
-from nodecheck.spec import PASS
+from nodecheck.spec import FAIL, PASS, WARN
 
 INFO = "INFO"
 
@@ -20,5 +20,48 @@ def compare(baseline: dict, current: dict, spec: dict) -> list[dict]:
     """One result per metric in `current` ({metric: median, or None if the tool failed}).
 
     Each result is {"name", "status", "actual", "expected"}, like the spec checks.
+    Only the metrics that were run again are compared (e.g. just the network ones).
     """
-    return [{"name": metric, "status": PASS, "actual": "", "expected": ""} for metric in current]
+    rules = spec["benchmark"]["compare"]
+    return [
+        _compare_one(metric, value, baseline["metrics"].get(metric), rules.get(metric, {}))
+        for metric, value in current.items()
+    ]
+
+
+def _compare_one(metric: str, value: float | None, base: dict | None, rule: dict) -> dict:
+    if base is None or not base.get("median"):
+        return _result(metric, WARN, _number(value, ""), "no baseline value to compare with")
+    was, unit = base["median"], base["unit"]
+    lower_is_better = rule.get("better") == "lower"
+    expected = f"{was:.2f} {unit}"
+    if "fail_drop" in rule:
+        sign = "+" if lower_is_better else "-"
+        expected += f", WARN {sign}{rule['warn_drop']:.0%}, FAIL {sign}{rule['fail_drop']:.0%}"
+
+    if value is None:
+        # the tool failed this time (e.g. iperf3 could not reach the peer): not seen is not fine
+        return _result(metric, WARN, "no value this time", expected)
+
+    change = value / was - 1  # +0.14 = 14% higher than the baseline
+    actual = f"{value:.2f} {unit} ({change:+.0%})"
+    if "fail_drop" not in rule:
+        return _result(metric, INFO, actual, expected + ", not judged")
+
+    # how much worse, as a fraction of the baseline; negative = better, which is never flagged
+    worse = change if lower_is_better else -change
+    if worse >= rule["fail_drop"]:
+        status = FAIL
+    elif worse >= rule["warn_drop"]:
+        status = WARN
+    else:
+        status = PASS
+    return _result(metric, status, actual, expected)
+
+
+def _number(value: float | None, unit: str) -> str:
+    return "no value this time" if value is None else f"{value:.2f} {unit}".strip()
+
+
+def _result(name: str, status: str, actual: str, expected: str) -> dict:
+    return {"name": name, "status": status, "actual": actual, "expected": expected}

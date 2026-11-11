@@ -19,8 +19,9 @@ import json
 import socket
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
-from nodecheck import bench, kernel_log
+from nodecheck import bench, compare, kernel_log
 from nodecheck.inventory import collect
 from nodecheck.spec import check, format_report, has_failures, load_spec
 
@@ -71,7 +72,16 @@ def main(argv: list[str] | None = None) -> int:
         # 1 when a metric has no value at all (e.g. iperf3 server not running): the baseline is incomplete
         return 1 if any(m["median"] is None for m in baseline["metrics"].values()) else 0
     elif args.command == "compare":
-        pass  # Not implemented yet.
+        spec = load_spec(args.spec)
+        baseline = json.loads(Path(args.baseline).read_text())
+        runs = spec["benchmark"]["runs"]
+        metrics = compare.NETWORK if args.only == "network" else None
+        values = bench.run_benchmarks(args.peer, runs, metrics=metrics)
+        current = {metric: bench.median(v) for metric, v in values.items()}
+        results = compare.compare(baseline, current, spec)
+        print(f"Baseline: {baseline['node']}, measured {baseline['measured_at']}; now: median of {runs} runs")
+        print(format_report(results, spec))
+        return 1 if has_failures(results) else 0
     return 0
 
 

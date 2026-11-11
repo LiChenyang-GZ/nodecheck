@@ -43,8 +43,9 @@ def has_failures(results: list[dict]) -> bool:
 def format_report(results: list[dict], spec: dict) -> str:
     """Human-readable table, one line per check (and its details, if any), plus a result line."""
     lines = [f"Spec: {spec.get('model', '(unnamed)')}"]
+    width = max([10] + [len(r["name"]) for r in results])  # benchmark names are longer than "cpu"
     for r in results:
-        lines.append(f"  {r['name']:<10} {r['actual']:<34} expected {r['expected']:<44} {r['status']}")
+        lines.append(f"  {r['name']:<{width}} {r['actual']:<34} expected {r['expected']:<44} {r['status']}")
         # e.g. the kernel errors themselves, so the report says what went wrong, not just how many
         details = r.get("details", [])
         lines.extend(f"    {d}" for d in details[:_MAX_DETAILS])
