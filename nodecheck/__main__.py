@@ -8,6 +8,9 @@
 With --root DIR, the kernel log is read from DIR/commands/journalctl-k.jsonl instead.
 
     python3 -m nodecheck bench --spec config/b2ats_v2.json --peer 172.16.0.5 --out baselines/node-1.json
+    python3 -m nodecheck compare --spec config/b2ats_v2.json --peer 172.16.0.5 --baseline baselines/node-1.json [--only network]
+
+`compare` runs the benchmarks again and flags metrics that got worse than the baseline.
 """
 from __future__ import annotations
 
@@ -39,6 +42,12 @@ def main(argv: list[str] | None = None) -> int:
     bench_cmd.add_argument("--out", required=True, help="where to write the baseline JSON")
     bench_cmd.add_argument("--node", default=socket.gethostname(), help="node name (default: this hostname)")
 
+    compare_cmd = commands.add_parser("compare", help="run the benchmarks again and compare with a baseline")
+    compare_cmd.add_argument("--spec", required=True, help="spec file, e.g. config/b2ats_v2.json")
+    compare_cmd.add_argument("--peer", required=True, help="private IP of the other node (runs `iperf3 -s`)")
+    compare_cmd.add_argument("--baseline", required=True, help="this node's baseline, e.g. baselines/node-1.json")
+    compare_cmd.add_argument("--only", choices=["network"], help="re-run only iperf3 and ping (about 45 s)")
+
     args = parser.parse_args(argv)
     if args.command == "inventory":
         print(json.dumps(collect(args.root), indent=2))
@@ -61,6 +70,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Saved to {args.out}")
         # 1 when a metric has no value at all (e.g. iperf3 server not running): the baseline is incomplete
         return 1 if any(m["median"] is None for m in baseline["metrics"].values()) else 0
+    elif args.command == "compare":
+        pass  # Not implemented yet.
     return 0
 
 

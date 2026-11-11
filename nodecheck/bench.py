@@ -113,8 +113,10 @@ def command_for(metric: str, peer: str) -> list[str]:
     return [peer if part == "{peer}" else part for part in COMMANDS[metric][0]]
 
 
-def run_benchmarks(peer: str, runs: int, runner=None) -> dict:
+def run_benchmarks(peer: str, runs: int, runner=None, metrics: list[str] | None = None) -> dict:
     """{metric: [one value per run]}; runner(command) returns the command's output or None (default: run).
+
+    metrics: only these (default: all of COMMANDS).
 
     Runs are interleaved (all tools, then all tools again) so a slow minute hits one run
     of each tool rather than every run of one tool.
