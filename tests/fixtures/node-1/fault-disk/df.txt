@@ -1,0 +1,2 @@
+Filesystem        1-blocks        Used  Available Capacity Mounted on
+/dev/root      65445814272 62811885568 2617151488      97% /

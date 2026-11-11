@@ -12,6 +12,11 @@
     "type": "ssd",
     "check_type": false
   },
+  "disk_usage": {
+    "mount": "/",
+    "warn_pct": 80,
+    "fail_pct": 90
+  },
   "nics": {
     "min_up": 1
   },
@@ -70,6 +75,7 @@
     "kernel_log.max_priority": "Count messages at priority 0-3 (emerg, alert, crit, err). Warnings (4) are only counted: a healthy VM logs 9 at boot (no PCI bus, no CPU microcode, ...).",
     "kernel_log.ignore": "Known harmless messages (regex, matched with re.search). Each needs a reason, so every exception is on record.",
     "benchmark.runs": "Each benchmark runs 3 times and the median is kept, so one slow run (a noisy neighbour) doesn't move the baseline.",
-    "benchmark.compare": "Per metric: which way is better, and how much worse than the baseline gives WARN or FAIL. warn_drop / fail_drop are shares of the baseline: bandwidth varied 7% within one baseline and 14% between two sessions (5.03 vs 5.73 Gbit/s), so 15% / 25% leave room for that. warn_by / fail_by are in the metric's unit: latency is about 0.46 ms, and with no fault it was up to 0.64 ms higher on the same evening (+139%), so a percentage would flag noise; 2 ms of added delay showed as +2.36 ms. Better than the baseline is never flagged. A metric without thresholds is shown but not judged."
+    "benchmark.compare": "Per metric: which way is better, and how much worse than the baseline gives WARN or FAIL. warn_drop / fail_drop are shares of the baseline: bandwidth varied 7% within one baseline and 14% between two sessions (5.03 vs 5.73 Gbit/s), so 15% / 25% leave room for that. warn_by / fail_by are in the metric's unit: latency is about 0.46 ms, and with no fault it was up to 0.64 ms higher on the same evening (+139%), so a percentage would flag noise; 2 ms of added delay showed as +2.36 ms. Better than the baseline is never flagged. A metric without thresholds is shown but not judged.",
+    "disk_usage": "Share of the root filesystem used, for space and for inodes (same thresholds): WARN from 80%, FAIL from 90%. The size check only says the disk is big enough; this says whether it is full. On this image almost nothing is reserved for root (16 MiB of 61 GiB), so an ordinary user can fill it to 100%."
   }
 }

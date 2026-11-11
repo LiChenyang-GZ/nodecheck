@@ -4,8 +4,9 @@
     python3 -m nodecheck inventory --root DIR   # a captured fixture directory
     python3 -m nodecheck check --spec config/b2ats_v2.json [--root DIR]
 
-`check` compares the inventory with the spec and looks for kernel errors since this boot.
-With --root DIR, the kernel log is read from DIR/commands/journalctl-k.jsonl instead.
+`check` compares the inventory with the spec, looks for kernel errors since this boot and checks
+how full the root filesystem is. With --root DIR, the kernel log and df output are read from
+DIR/commands/ (journalctl-k.jsonl, df.txt, df-i.txt) instead.
 
     python3 -m nodecheck bench --spec config/b2ats_v2.json --peer 172.16.0.5 --out baselines/node-1.json
     python3 -m nodecheck compare --spec config/b2ats_v2.json --peer 172.16.0.5 --baseline baselines/node-1.json [--only network]
@@ -21,7 +22,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from nodecheck import bench, compare, kernel_log
+from nodecheck import bench, compare, disk_usage, kernel_log
 from nodecheck.inventory import collect
 from nodecheck.spec import check, format_report, has_failures, load_spec
 
@@ -57,6 +58,8 @@ def main(argv: list[str] | None = None) -> int:
         results = check(collect(args.root), spec)
         log = kernel_log.read(args.root)
         results.append(kernel_log.check(None if log is None else kernel_log.parse(log), spec))
+        space, inodes = (None if t is None else disk_usage.parse(t) for t in disk_usage.read(args.root))
+        results.extend(disk_usage.check(space, inodes, spec))
         print(format_report(results, spec))
         # 1 when anything FAILs, so a script looping over many nodes can pick out the bad ones
         return 1 if has_failures(results) else 0
