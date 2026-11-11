@@ -13,9 +13,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import socket
 import sys
+from datetime import datetime, timezone
 
-from nodecheck import kernel_log
+from nodecheck import bench, kernel_log
 from nodecheck.inventory import collect
 from nodecheck.spec import check, format_report, has_failures, load_spec
 
@@ -35,6 +37,7 @@ def main(argv: list[str] | None = None) -> int:
     bench_cmd.add_argument("--spec", required=True, help="spec file, e.g. config/b2ats_v2.json")
     bench_cmd.add_argument("--peer", required=True, help="private IP of the other node (runs `iperf3 -s`)")
     bench_cmd.add_argument("--out", required=True, help="where to write the baseline JSON")
+    bench_cmd.add_argument("--node", default=socket.gethostname(), help="node name (default: this hostname)")
 
     args = parser.parse_args(argv)
     if args.command == "inventory":
@@ -48,7 +51,16 @@ def main(argv: list[str] | None = None) -> int:
         # 1 when anything FAILs, so a script looping over many nodes can pick out the bad ones
         return 1 if has_failures(results) else 0
     elif args.command == "bench":
-        pass  # Not implemented yet.
+        spec = load_spec(args.spec)
+        values = bench.run_benchmarks(args.peer, spec["benchmark"]["runs"])
+        measured_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        baseline = bench.make_baseline(args.node, values, spec, measured_at, peer=args.peer)
+        bench.save(baseline, args.out)
+        print(f"Baseline for {args.node} ({spec['model']}), median of {spec['benchmark']['runs']} runs")
+        print(bench.format_summary(baseline))
+        print(f"Saved to {args.out}")
+        # 1 when a metric has no value at all (e.g. iperf3 server not running): the baseline is incomplete
+        return 1 if any(m["median"] is None for m in baseline["metrics"].values()) else 0
     return 0
 
 
