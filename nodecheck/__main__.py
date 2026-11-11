@@ -31,6 +31,17 @@ from nodecheck.inventory import collect
 from nodecheck.spec import check, format_report, has_failures, load_spec
 
 
+def health_check(spec: dict, root: str) -> list[dict]:
+    """Every check result: the spec checks, the kernel log, and how full the root filesystem is."""
+    results = check(collect(root), spec)
+    log = kernel_log.read(root)
+    results.append(kernel_log.check(None if log is None else kernel_log.parse(log), spec))
+    texts = disk_usage.read(root, spec["disk_usage"]["mount"])
+    space, inodes = (None if t is None else disk_usage.parse(t) for t in texts)
+    results.extend(disk_usage.check(space, inodes, spec))
+    return results
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="nodecheck", description="Validate a Linux node before handover.")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -65,11 +76,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(collect(args.root), indent=2))
     elif args.command == "check":
         spec = load_spec(args.spec)
-        results = check(collect(args.root), spec)
-        log = kernel_log.read(args.root)
-        results.append(kernel_log.check(None if log is None else kernel_log.parse(log), spec))
-        space, inodes = (None if t is None else disk_usage.parse(t) for t in disk_usage.read(args.root, spec["disk_usage"]["mount"]))
-        results.extend(disk_usage.check(space, inodes, spec))
+        results = health_check(spec, args.root)
         print(format_report(results, spec))
         # 1 when anything FAILs, so a script looping over many nodes can pick out the bad ones
         return 1 if has_failures(results) else 0
@@ -96,7 +103,16 @@ def main(argv: list[str] | None = None) -> int:
         print(format_report(results, spec))
         return 1 if has_failures(results) else 0
     elif args.command == "bundle":
-        pass  # Not implemented yet.
+        spec = load_spec(args.spec)
+        report = format_report(health_check(spec, args.root), spec) + "\n"  # as `check` prints it
+        inventory = collect(args.root)
+        copies = {"spec.json": args.spec}
+        if args.baseline:
+            copies["baseline.json"] = args.baseline
+        host = inventory.get("hostname") or socket.gethostname()
+        now = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        out = bundle.make(args.out or f"nodecheck-{host}-{now}.tar.gz", report, inventory, copies, root=args.root)
+        print(f"Bundle written to {out}")
     return 0
 
 
