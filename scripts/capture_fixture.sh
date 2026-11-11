@@ -7,6 +7,7 @@
 #   node-1/sys/...       copies of /sys files
 #   node-1/etc/os-release
 #   node-1/commands/*.txt  output of lscpu, free, lsblk, ip... for cross-checking
+#   node-1/commands/journalctl-k.jsonl  kernel warnings and errors since this boot
 #
 # Why `cat` and not `cp` or `tar`: files under /proc and /sys report size 0.
 # The kernel generates their content only when you read them, so tar would archive empty files.
@@ -61,6 +62,9 @@ run free-k.txt  free -k
 run lsblk.txt   lsblk -b -d -o NAME,SIZE,ROTA,TYPE,MODEL
 run ip-link.txt ip -br link
 run uname-r.txt uname -r
+# kernel messages at warning and worse since this boot, one JSON object per line
+# (nodecheck reads this file instead of running journalctl when given --root)
+journalctl -k -b -p warning -o json --no-pager > "$out/commands/journalctl-k.jsonl" 2>/dev/null || true
 
 tar czf "/tmp/$name-fixture.tar.gz" -C "$work" "$name"
 echo "wrote /tmp/$name-fixture.tar.gz ($(find "$out" -type f | wc -l) files)"

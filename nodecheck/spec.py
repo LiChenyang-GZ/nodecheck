@@ -13,6 +13,7 @@ from pathlib import Path
 
 PASS, WARN, FAIL = "PASS", "WARN", "FAIL"
 _SEVERITY = {PASS: 0, WARN: 1, FAIL: 2}
+_MAX_DETAILS = 5  # detail lines shown per check in the report
 
 GIB = 1024**3  # bytes
 KIB_PER_GIB = 1024**2  # /proc/meminfo counts in KiB
@@ -40,10 +41,15 @@ def has_failures(results: list[dict]) -> bool:
 
 
 def format_report(results: list[dict], spec: dict) -> str:
-    """Human-readable table, one line per check, plus a result line."""
+    """Human-readable table, one line per check (and its details, if any), plus a result line."""
     lines = [f"Spec: {spec.get('model', '(unnamed)')}"]
     for r in results:
-        lines.append(f"  {r['name']:<10} {r['actual']:<28} expected {r['expected']:<38} {r['status']}")
+        lines.append(f"  {r['name']:<10} {r['actual']:<34} expected {r['expected']:<44} {r['status']}")
+        # e.g. the kernel errors themselves, so the report says what went wrong, not just how many
+        details = r.get("details", [])
+        lines.extend(f"    {d}" for d in details[:_MAX_DETAILS])
+        if len(details) > _MAX_DETAILS:
+            lines.append(f"    ... and {len(details) - _MAX_DETAILS} more")
     fails = sum(r["status"] == FAIL for r in results)
     warns = sum(r["status"] == WARN for r in results)
     lines.append(f"Result: {fails} FAIL, {warns} WARN")
