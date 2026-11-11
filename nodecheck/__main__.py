@@ -58,7 +58,7 @@ def main(argv: list[str] | None = None) -> int:
         results = check(collect(args.root), spec)
         log = kernel_log.read(args.root)
         results.append(kernel_log.check(None if log is None else kernel_log.parse(log), spec))
-        space, inodes = (None if t is None else disk_usage.parse(t) for t in disk_usage.read(args.root))
+        space, inodes = (None if t is None else disk_usage.parse(t) for t in disk_usage.read(args.root, spec["disk_usage"]["mount"]))
         results.extend(disk_usage.check(space, inodes, spec))
         print(format_report(results, spec))
         # 1 when anything FAILs, so a script looping over many nodes can pick out the bad ones
