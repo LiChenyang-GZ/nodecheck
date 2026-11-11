@@ -1,0 +1,67 @@
+{
+  "node": "node-2",
+  "model": "Azure Standard_B2ats_v2",
+  "measured_at": "2026-11-11T07:12:34+00:00",
+  "conditions": {
+    "runs": 3,
+    "commands": {
+      "cpu_bogo_ops_per_s": "sh -c 'stress-ng --cpu 2 --timeout 20s --metrics-brief 2>&1'",
+      "disk_randread_iops": "fio --name=randread --rw=randread --bs=4k --iodepth=32 --filename=/tmp/nodecheck-fio.dat --size=256M --direct=1 --ioengine=libaio --runtime=20 --time_based --unlink=1 --output-format=json",
+      "disk_seqread_mb_per_s": "fio --name=seqread --rw=read --bs=1M --iodepth=8 --filename=/tmp/nodecheck-fio.dat --size=256M --direct=1 --ioengine=libaio --runtime=20 --time_based --unlink=1 --output-format=json",
+      "net_gbit_per_s": "iperf3 -c 172.16.0.4 -t 10 -J",
+      "net_latency_ms": "ping -c 20 -i 0.2 172.16.0.4"
+    },
+    "notes": {
+      "cpu": "B2ats_v2 is burstable: base CPU is 20% (60 initial credits, 24 banked per hour, max 576). These numbers are measured while bursting; with no credits left the CPU drops to about a fifth, which looks like a fault but is the platform throttling.",
+      "disk": "The OS disk has host caching ReadWrite (checked with the instance metadata service). The 256 MB fio file is served from the host's cache, so IOPS (~9,400) is far above the P6 disk's own limit (3,500 when bursting). Good for spotting drift, not a measure of the disk itself.",
+      "network": "Azure caps this size at 6,250 Mbps in total; one TCP stream measured 4.8-5.0 Gbit/s between the two nodes."
+    }
+  },
+  "metrics": {
+    "cpu_bogo_ops_per_s": {
+      "unit": "bogo ops/s",
+      "runs": [
+        2314.33,
+        2321.26,
+        2311.44
+      ],
+      "median": 2314.33
+    },
+    "disk_randread_iops": {
+      "unit": "IOPS",
+      "runs": [
+        9370.67159,
+        9390.750637,
+        9389.454763
+      ],
+      "median": 9389.454763
+    },
+    "disk_seqread_mb_per_s": {
+      "unit": "MB/s",
+      "runs": [
+        132.776099,
+        132.749648,
+        132.868759
+      ],
+      "median": 132.776099
+    },
+    "net_gbit_per_s": {
+      "unit": "Gbit/s",
+      "runs": [
+        4.943738931601419,
+        5.17613613488573,
+        5.106832126730162
+      ],
+      "median": 5.106832126730162
+    },
+    "net_latency_ms": {
+      "unit": "ms",
+      "runs": [
+        0.582,
+        0.542,
+        0.489
+      ],
+      "median": 0.542
+    }
+  }
+}
